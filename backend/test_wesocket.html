@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Live Plate Data</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            h1 {
+                color: #333;
+            }
+            .data-container {
+                margin-bottom: 20px;
+            }
+            .plate-info {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+            .image-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            #full-image,
+            #plate-image,
+            #live-image {
+                max-width: 100%;
+                height: auto;
+                border: 1px solid #ddd;
+                padding: 5px;
+                margin-bottom: 20px;
+            }
+            #plate-image {
+                display: none; /* Initially hidden */
+            }
+            #full-image {
+                display: none; /* Initially hidden */
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Live Plate Data</h1>
+
+        <div id="plate-data" class="data-container">
+            <div class="plate-info" id="plate-number">Plate Number:</div>
+            <div class="plate-info" id="timestamp">Timestamp:</div>
+            <div class="plate-info" id="gate">Gate:</div>
+            <div class="plate-info" id="ocr-accuracy">OCR Accuracy:</div>
+            <div class="plate-info" id="vision-speed">Vision Speed:</div>
+        </div>
+
+        <div class="image-container">
+            <h2>Full Plate Image</h2>
+            <img id="full-image" alt="Full Image" src="" />
+
+            <h2>Plate Image</h2>
+            <img id="plate-image" alt="Plate Image" src="" />
+        </div>
+
+        <h2>Live View</h2>
+        <img id="live-image" alt="Live Image" src="" />
+        <div class="live-info" id="live-gate">Gate:</div>
+        <!-- Add gate info for live view -->
+
+        <!-- Include Socket.IO client library -->
+        <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+        <script>
+            // Initialize Socket.IO connection to the server
+            const socket = io("http://localhost:8000", {
+                path: "/socket.io",
+                transports: ["websocket"], // Force WebSocket transport only
+                upgrade: false,
+            });
+
+            // Listen for 'connect' event
+            socket.on("connect", () => {
+                console.log("Connected to Socket.IO server");
+            });
+
+            // Listen for 'message' event
+            socket.on("message", (data) => {
+                const message = JSON.parse(data);
+
+                if (message.messageType === "plates_data") {
+                    // Update plate data
+                    document.getElementById("plate-number").innerText =
+                        "Plate Number: " + message.plate_number;
+                    document.getElementById("timestamp").innerText =
+                        "Timestamp: " + message.timestamp;
+                    document.getElementById("gate").innerText =
+                        "Gate: " + message.gate;
+                    document.getElementById("ocr-accuracy").innerText =
+                        "OCR Accuracy: " + message.ocr_accuracy;
+                    document.getElementById("vision-speed").innerText =
+                        "Vision Speed: " + message.vision_speed;
+
+                    // Update full image
+                    if (message.full_image) {
+                        document.getElementById("full-image").src =
+                            "data:image/png;base64," + message.full_image;
+                        document.getElementById("full-image").style.display =
+                            "block";
+                    }
+
+                    // Update plate image
+                    if (message.plate_image) {
+                        document.getElementById("plate-image").src =
+                            "data:image/png;base64," + message.plate_image;
+                        document.getElementById("plate-image").style.display =
+                            "block";
+                    }
+                }
+
+                if (message.messageType === "live") {
+                    // Update live image
+                    if (message.live_image) {
+                        document.getElementById("live-image").src =
+                            "data:image/png;base64," + message.live_image;
+                        document.getElementById("live-image").style.display =
+                            "block";
+                    }
+
+                    // Update live gate information
+                    document.getElementById("live-gate").innerText =
+                        "Gate: " + message.gate;
+                }
+            });
+
+            // Handle disconnection
+            socket.on("disconnect", () => {
+                console.log("Disconnected from Socket.IO server");
+            });
+
+            // Handle connection errors
+            socket.on("connect_error", (error) => {
+                console.error("Connection error: ", error);
+            });
+        </script>
+    </body>
+</html>
+
+<!--
+{
+  "camera_id": 1,
+  "commandType": "start_recording",
+  "cameraId": "1",
+  "duration": 60
+} -->
+
+<!-- {
+  "name": "camera 1",
+  "ip": "185.81.99.23",
+  "port": 45,
+  "auth_token": "dBzsEzYuBy6wgiGlI4UUXJPLp1OoS0Cc2YgyCFOCh2U7pvH16ucL1334OjCmeWFJ",
+  "location": "vali asr",
+  "description": "string",
+  "setting_id": 1
+} -->
